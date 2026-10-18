@@ -9,13 +9,19 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                echo 'Source code berhasil diambil dari GitHub'
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
+            }
+        }
+
+        stage('Test Container') {
+            steps {
+                sh 'docker run --rm $IMAGE_NAME:$BUILD_NUMBER python -c "from flask import Flask; print(\'Flask berhasil diimpor\')"'
             }
         }
 
@@ -37,7 +43,7 @@ pipeline {
 
     post {
         always {
-            echo 'Selesai build'
+            echo 'Pipeline selesai'
         }
     }
 }
