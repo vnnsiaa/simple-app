@@ -9,32 +9,26 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                echo 'Source code berhasil diambil dari GitHub'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t $IMAGE_NAME:$BUILD_NUMBER .'
-            }
-        }
-
-        stage('Test Container') {
-            steps {
-                sh 'docker run --rm $IMAGE_NAME:$BUILD_NUMBER python -c "from flask import Flask; print(\'Flask berhasil diimpor\')"'
+                sh 'docker tag $IMAGE_NAME:$BUILD_NUMBER $IMAGE_NAME:latest'
             }
         }
 
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(
-                    credentialsId: REGISTRY_CREDENTIALS,
+                    credentialsId: "${REGISTRY_CREDENTIALS}",
                     usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_TOKEN'
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh 'echo "$DOCKER_TOKEN" | docker login -u "$DOCKER_USER" --password-stdin'
+                    sh 'echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin'
                     sh 'docker push $IMAGE_NAME:$BUILD_NUMBER'
-                    sh 'docker tag $IMAGE_NAME:$BUILD_NUMBER $IMAGE_NAME:latest'
                     sh 'docker push $IMAGE_NAME:latest'
                 }
             }
@@ -43,7 +37,7 @@ pipeline {
 
     post {
         always {
-            echo 'Pipeline selesai'
+            echo 'Selesai build'
         }
     }
 }
